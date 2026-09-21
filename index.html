@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+<head><meta charset="utf-8">
+<meta name="color-scheme" content="light only">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Quanto falta para você parar? | O Planejador Financeiro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --teal:#0D9488; --teal-strong:#0F766E; --teal-soft:#CCFBF1;
+  --bg:#F6FAF9; --surface:#FFFFFF; --ink:#12302C; --muted:#5B706D; --line:#DCE8E6;
+  --warn:#B45309; --warn-soft:#FEF3C7;
+  --display:"Plus Jakarta Sans", "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --body:"Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --teal:#2DD4BF; --teal-strong:#5EEAD4; --teal-soft:#123B37;
+    --bg:#0B1614; --surface:#12211F; --ink:#E3F1EE; --muted:#93AAA6; --line:#20332F;
+    --warn:#FBBF24; --warn-soft:#3A2E10;
+  }
+}
+:root[data-theme="dark"]{
+  --teal:#2DD4BF; --teal-strong:#5EEAD4; --teal-soft:#123B37;
+  --bg:#0B1614; --surface:#12211F; --ink:#E3F1EE; --muted:#93AAA6; --line:#20332F;
+  --warn:#FBBF24; --warn-soft:#3A2E10;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;min-height:100%;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.wrap{max-width:560px;margin:0 auto;padding:20px 22px 40px;min-height:100%;display:flex;flex-direction:column}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:28px}
+.brand{font-family:var(--display);font-weight:700;font-size:15px;letter-spacing:-.01em;color:var(--ink);display:flex;align-items:center;gap:8px}
+.brand i{width:10px;height:10px;border-radius:50%;background:var(--teal);display:inline-block}
+.stepcount{font-size:14px;color:var(--muted)}
+.progress{height:4px;background:var(--line);border-radius:4px;overflow:hidden;margin-bottom:36px}
+.progress span{display:block;height:100%;width:0;background:var(--teal);transition:width .35s ease}
+.screen{display:none;flex:1;flex-direction:column}
+.screen.on{display:flex;animation:in .35s ease}
+@keyframes in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.screen.on{animation:none}.progress span{transition:none}}
+h1,h2{font-family:var(--display);letter-spacing:-.025em;margin:0}
+h1{font-size:clamp(34px,9vw,46px);line-height:1.05;font-weight:800}
+h2{font-size:clamp(26px,7vw,34px);line-height:1.12;font-weight:700}
+.lead{color:var(--muted);margin:16px 0 0;max-width:46ch}
+.hint{color:var(--muted);font-size:15px;margin:12px 0 0}
+.field{margin-top:34px;display:flex;align-items:baseline;gap:10px;border-bottom:2px solid var(--line);padding-bottom:6px;transition:border-color .2s}
+.field:focus-within{border-color:var(--teal)}
+.field .pre,.field .suf{font-family:var(--display);font-weight:700;font-size:26px;color:var(--muted)}
+.field input{flex:1;min-width:0;border:0;background:transparent;color:var(--ink);font-family:var(--display);font-weight:800;font-size:clamp(40px,12vw,56px);letter-spacing:-.03em;padding:0;outline:none}
+.field input::placeholder{color:var(--line)}
+.err{color:var(--warn);font-size:15px;min-height:22px;margin-top:10px}
+.actions{margin-top:auto;padding-top:32px;display:flex;flex-direction:column;gap:12px}
+button,.btn{appearance:none;border:0;cursor:pointer;font-family:var(--display);font-weight:700;font-size:17px;border-radius:14px;padding:17px 22px;text-align:center;text-decoration:none;display:block;width:100%}
+.primary{background:var(--teal);color:#fff}
+:root[data-theme="dark"] .primary{color:#062B27}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .primary{color:#062B27}}
+.primary:hover{filter:brightness(1.06)}
+.ghost{background:transparent;color:var(--ink);border:1.5px solid var(--line)}
+.link{background:none;color:var(--muted);font-family:var(--body);font-weight:500;font-size:15px;padding:8px;width:auto;align-self:center}
+button:focus-visible,.btn:focus-visible,input:focus-visible{outline:3px solid var(--teal);outline-offset:3px}
+.field input:focus-visible{outline:none}
+
+/* resultado */
+.verdict{font-family:var(--display);font-weight:800;font-size:clamp(30px,8.5vw,42px);line-height:1.08;letter-spacing:-.03em;margin:0}
+.verdict em{font-style:normal;color:var(--warn)}
+.verdict.good em{color:var(--teal)}
+.sub{margin:16px 0 0;font-size:18px}
+.sub b{font-family:var(--display);font-weight:800;color:var(--teal-strong);font-size:20px;white-space:nowrap}
+.chart{margin:28px -6px 6px;overflow-x:auto}
+.chart svg{display:block;width:100%;height:auto;min-width:320px}
+.legend{display:flex;gap:18px;flex-wrap:wrap;font-size:14px;color:var(--muted);margin-top:6px}
+.legend span{display:flex;align-items:center;gap:7px}
+.legend i{width:18px;height:3px;border-radius:2px;display:inline-block}
+.facts{margin-top:22px;border-top:1px solid var(--line)}
+.facts div{display:flex;justify-content:space-between;gap:16px;padding:12px 0;border-bottom:1px solid var(--line);font-size:15px}
+.facts dt{color:var(--muted)} .facts dd{margin:0;font-weight:600;text-align:right}
+.cta-box{margin-top:34px;background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:24px 20px}
+.cta-box h2{font-size:24px}
+.cta-box p{color:var(--muted);margin:10px 0 18px;font-size:16px}
+label.in{display:block;font-size:14px;font-weight:600;margin:14px 0 6px}
+.cta-box input[type=text],.cta-box input[type=tel],.cta-box input[type=email]{width:100%;font:inherit;font-size:17px;color:var(--ink);background:var(--bg);border:1.5px solid var(--line);border-radius:12px;padding:14px}
+.cta-box input:focus{border-color:var(--teal);outline:none}
+.consent{display:flex;gap:10px;align-items:flex-start;font-size:13.5px;color:var(--muted);margin:16px 0 18px;line-height:1.45}
+.consent input{margin-top:3px;width:18px;height:18px;accent-color:var(--teal);flex:none}
+.disclaimer{font-size:12.5px;color:var(--muted);line-height:1.5;margin-top:26px}
+.again{margin-top:10px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand"><i></i>O Planejador Financeiro</div>
+    <div class="stepcount" id="stepcount" aria-live="polite"></div>
+  </header>
+  <div class="progress" aria-hidden="true"><span id="bar"></span></div>
+
+  <!-- 0 intro -->
+  <section class="screen on" data-step="0">
+    <h1>Quanto falta para você trabalhar só se quiser?</h1>
+    <p class="lead">Seis perguntas, dois minutos. No fim você vê, num gráfico, se o caminho que está seguindo hoje te leva até lá, e quanto precisaria mudar.</p>
+    <div class="actions"><button class="primary" data-next>Começar</button></div>
+  </section>
+
+  <!-- 1 idade -->
+  <section class="screen" data-step="1">
+    <h2>Quantos anos você tem hoje?</h2>
+    <div class="field"><input id="idade" inputmode="numeric" maxlength="2" placeholder="35" aria-label="Idade atual"><span class="suf">anos</span></div>
+    <div class="err" id="err1"></div>
+    <div class="actions"><button class="primary" data-next>Continuar</button><button class="link" data-back>Voltar</button></div>
+  </section>
+
+  <!-- 2 idade de parar -->
+  <section class="screen" data-step="2">
+    <h2>Com quantos anos você quer parar de trabalhar, ou trabalhar só por opção?</h2>
+    <div class="field"><input id="parar" inputmode="numeric" maxlength="2" placeholder="55" aria-label="Idade para parar"><span class="suf">anos</span></div>
+    <div class="err" id="err2"></div>
+    <div class="actions"><button class="primary" data-next>Continuar</button><button class="link" data-back>Voltar</button></div>
+  </section>
+
+  <!-- 3 renda desejada -->
+  <section class="screen" data-step="3">
+    <h2>Com que renda por mês você quer viver quando parar?</h2>
+    <p class="hint">Pense no padrão de vida de hoje, em dinheiro de hoje. A inflação a gente já considera.</p>
+    <div class="field"><span class="pre">R$</span><input id="renda" inputmode="numeric" placeholder="20.000" aria-label="Renda mensal desejada"></div>
+    <div class="err" id="err3"></div>
+    <div class="actions"><button class="primary" data-next>Continuar</button><button class="link" data-back>Voltar</button></div>
+  </section>
+
+  <!-- 4 renda passiva -->
+  <section class="screen" data-step="4">
+    <h2>Você já tem alguma renda que cai sem você trabalhar?</h2>
+    <p class="hint">Aluguel, INSS, pensão, arrendamento… Coloque a soma por mês.</p>
+    <div class="field"><span class="pre">R$</span><input id="passiva" inputmode="numeric" placeholder="0" aria-label="Renda passiva mensal"></div>
+    <div class="err" id="err4"></div>
+    <div class="actions"><button class="primary" data-next>Continuar</button><button class="ghost" data-zero="passiva">Não tenho</button><button class="link" data-back>Voltar</button></div>
+  </section>
+
+  <!-- 5 investido -->
+  <section class="screen" data-step="5">
+    <h2>Quanto você já tem investido hoje?</h2>
+    <p class="hint">Tudo o que está aplicado: previdência, renda fixa, ações, fundos. Não conte imóvel em que você mora.</p>
+    <div class="field"><span class="pre">R$</span><input id="investido" inputmode="numeric" placeholder="300.000" aria-label="Valor investido"></div>
+    <div class="err" id="err5"></div>
+    <div class="actions"><button class="primary" data-next>Continuar</button><button class="ghost" data-zero="investido">Ainda não tenho</button><button class="link" data-back>Voltar</button></div>
+  </section>
+
+  <!-- 6 aporte -->
+  <section class="screen" data-step="6">
+    <h2>Quanto você consegue guardar por mês?</h2>
+    <p class="hint">O que sobra de verdade, na média, depois de pagar a vida.</p>
+    <div class="field"><span class="pre">R$</span><input id="aporte" inputmode="numeric" placeholder="3.000" aria-label="Quanto poupa por mês"></div>
+    <div class="err" id="err6"></div>
+    <div class="actions"><button class="primary" data-next>Continuar</button><button class="ghost" data-zero="aporte">Hoje não sobra nada</button><button class="link" data-back>Voltar</button></div>
+  </section>
+
+  <!-- 7 faixa de renda (qualificação) -->
+  <section class="screen" data-step="7">
+    <h2>Por último: qual é a sua renda hoje, por mês?</h2>
+    <p class="hint">É só pra ajustar o plano à sua realidade. Some tudo o que entra no mês.</p>
+    <div class="actions">
+      <button class="ghost" data-faixa="Até R$ 10 mil">Até R$ 10 mil</button>
+      <button class="ghost" data-faixa="R$ 10 mil a R$ 20 mil">R$ 10 mil a R$ 20 mil</button>
+      <button class="ghost" data-faixa="R$ 20 mil a R$ 40 mil">R$ 20 mil a R$ 40 mil</button>
+      <button class="ghost" data-faixa="Acima de R$ 40 mil">Acima de R$ 40 mil</button>
+      <button class="link" data-back>Voltar</button>
+    </div>
+  </section>
+
+  <!-- 8 resultado -->
+  <section class="screen" data-step="8">
+    <p class="verdict" id="verdict"></p>
+    <p class="sub" id="sub"></p>
+    <div class="chart" id="chart" role="img" aria-label="Gráfico da evolução do patrimônio"></div>
+    <div class="legend" id="legend"></div>
+    <dl class="facts" id="facts"></dl>
+
+    <div class="cta-box">
+      <h2>Quer fechar essa diferença com um plano de verdade?</h2>
+      <p>Esse número é o ponto de partida. Eu monto o passo a passo pro seu número bater e a gente ajusta numa conversa de 30 minutos, sem compromisso.</p>
+      <label class="in" for="nome">Seu nome</label>
+      <input type="text" id="nome" autocomplete="name">
+      <label class="in" for="tel">WhatsApp</label>
+      <input type="tel" id="tel" autocomplete="tel" inputmode="tel" placeholder="(82) 90000-0000">
+      <label class="in" for="email">E-mail</label>
+      <input type="email" id="email" autocomplete="email">
+      <label class="consent"><input type="checkbox" id="lgpd"><span>Autorizo o contato por WhatsApp e e-mail para agendar a conversa. Meus dados não serão compartilhados com terceiros.</span></label>
+      <div class="err" id="errC"></div>
+      <a class="btn primary" id="send" href="#" target="_blank" rel="noopener">Quero meu plano pra fechar essa diferença</a>
+    </div>
+    <button class="link again" id="again">Refazer a simulação</button>
+    <p class="disclaimer" id="premissas"></p>
+  </section>
+</div>
+
+<script>
+(function(){
+  // ====== CONFIGURAÇÃO ======
+  var WHATSAPP = "5582981020001";   // número que recebe os contatos: 55 + DDD + número, só dígitos
+  var LEAD_EMAIL = "joao@oplanejadorfinanceiro.com";  // recebe os leads por e-mail (via FormSubmit)
+  var JURO_NOMINAL = 0.10;          // retorno nominal ao ano
+  var INFLACAO = 0.05;              // inflação ao ano
+  var JURO_REAL = (1 + JURO_NOMINAL) / (1 + INFLACAO) - 1; // ≈ 4,76% ao ano
+  var IDADE_FINAL = 95;
+  // ==========================
+
+  var step = 0, TOTAL = 7;
+  var faixa = '';
+  var screens = document.querySelectorAll('.screen');
+  var bar = document.getElementById('bar'), counter = document.getElementById('stepcount');
+  var brl = new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:0});
+  function fmt(v){ return brl.format(Math.round(v)); }
+  function compact(v){
+    if (v >= 1e6) return 'R$ ' + (v/1e6).toLocaleString('pt-BR',{maximumFractionDigits:1}) + ' mi';
+    if (v >= 1e3) return 'R$ ' + Math.round(v/1e3) + ' mil';
+    return 'R$ ' + Math.round(v);
+  }
+  function num(id){ var d = document.getElementById(id).value.replace(/\D/g,''); return d ? parseInt(d,10) : NaN; }
+
+  // máscara de moeda
+  ['renda','passiva','investido','aporte'].forEach(function(id){
+    var el = document.getElementById(id);
+    el.addEventListener('input', function(){
+      var d = el.value.replace(/\D/g,'').slice(0,11);
+      el.value = d ? parseInt(d,10).toLocaleString('pt-BR') : '';
+    });
+  });
+  ['idade','parar'].forEach(function(id){
+    var el = document.getElementById(id);
+    el.addEventListener('input', function(){ el.value = el.value.replace(/\D/g,''); });
+  });
+
+  function show(n){
+    step = n;
+    screens.forEach(function(s){ s.classList.toggle('on', +s.dataset.step === n); });
+    var p = n === 0 ? 0 : Math.min(n, TOTAL) / TOTAL * 100;
+    bar.style.width = p + '%';
+    counter.textContent = (n >= 1 && n <= TOTAL) ? (n + ' de ' + TOTAL) : '';
+    window.scrollTo(0,0);
+    var inp = screens[n].querySelector('.field input');
+    if (inp) setTimeout(function(){ inp.focus(); }, 60);
+  }
+
+  function validate(n){
+    var e = '', v;
+    if (n === 1){ v = num('idade'); if (isNaN(v) || v < 16 || v > 85) e = 'Digite uma idade entre 16 e 85 anos.'; }
+    if (n === 2){ v = num('parar'); var a = num('idade');
+      if (isNaN(v)) e = 'Digite com quantos anos você quer parar.';
+      else if (v <= a) e = 'Tem que ser depois da sua idade atual (' + a + ' anos).';
+      else if (v > 90) e = 'Use uma idade até 90 anos.'; }
+    if (n === 3){ v = num('renda'); if (isNaN(v) || v < 500) e = 'Digite a renda mensal que você quer ter.'; }
+    if (n === 4 && isNaN(num('passiva'))) document.getElementById('passiva').value = '0';
+    if (n === 5 && isNaN(num('investido'))) document.getElementById('investido').value = '0';
+    if (n === 6 && isNaN(num('aporte'))) document.getElementById('aporte').value = '0';
+    var box = document.getElementById('err' + n); if (box) box.textContent = e;
+    return !e;
+  }
+
+  document.querySelectorAll('[data-next]').forEach(function(b){
+    b.addEventListener('click', function(){
+      if (!validate(step)) return;
+      show(step + 1);
+    });
+  });
+  document.querySelectorAll('[data-back]').forEach(function(b){ b.addEventListener('click', function(){ show(step - 1); }); });
+  document.querySelectorAll('[data-zero]').forEach(function(b){
+    b.addEventListener('click', function(){
+      document.getElementById(b.dataset.zero).value = '0';
+      show(step + 1);
+    });
+  });
+  document.querySelectorAll('.field input').forEach(function(inp){
+    inp.addEventListener('keydown', function(ev){ if (ev.key === 'Enter'){ ev.preventDefault(); screens[step].querySelector('[data-next]').click(); } });
+  });
+  document.querySelectorAll('[data-faixa]').forEach(function(b){
+    b.addEventListener('click', function(){
+      faixa = b.dataset.faixa;
+      calc();
+      show(step + 1);
+    });
+  });
+  document.getElementById('again').addEventListener('click', function(){ faixa = ''; show(1); });
+
+  var R = {};
+  function calc(){
+    var idade = num('idade'), parar = num('parar'), renda = num('renda'),
+        passiva = num('passiva') || 0, pv = num('investido') || 0, aporte = num('aporte') || 0;
+    var im = Math.pow(1 + JURO_REAL, 1/12) - 1;
+    var gap = Math.max(0, renda - passiva);
+    var alvo = gap / im;
+    var n = (parar - idade) * 12;
+    var g = Math.pow(1 + im, n);
+    var fvPV = pv * g;
+    var pmt = fvPV >= alvo ? 0 : (alvo - fvPV) * im / (g - 1);
+
+    function path(aporte){
+      var bal = pv, pts = [{x:idade, y:bal}], fim = null;
+      for (var m = 1; m <= (IDADE_FINAL - idade) * 12; m++){
+        var age = idade + m/12;
+        if (age <= parar) bal = bal * (1 + im) + aporte;
+        else bal = bal * (1 + im) - gap;
+        if (bal <= 0){ pts.push({x: age, y: 0}); fim = age; break; }
+        if (m % 12 === 0) pts.push({x: age, y: bal});
+      }
+      return {pts:pts, fim:fim};
+    }
+    R = {idade:idade, parar:parar, renda:renda, passiva:passiva, pv:pv, aporte:aporte, gap:gap, alvo:alvo, pmt:pmt, falta:Math.max(0, pmt - aporte),
+         hoje:path(aporte), plano:path(Math.max(pmt, aporte))};
+    render();
+  }
+
+  function render(){
+    var v = document.getElementById('verdict'), s = document.getElementById('sub');
+    v.classList.remove('good');
+    if (R.gap === 0){
+      v.classList.add('good');
+      v.innerHTML = 'Sua renda passiva <em>já paga</em> o padrão que você quer.';
+      s.innerHTML = 'Daqui para frente o jogo é outro: proteger esse patrimônio, pagar menos imposto e decidir o que deixar para quem vem depois.';
+    } else if (R.falta === 0){
+      v.classList.add('good');
+      v.innerHTML = 'No ritmo de hoje, você <em>chega lá</em> aos ' + R.parar + '.';
+      s.innerHTML = R.aporte > R.pmt
+        ? 'Você guarda ' + fmt(R.aporte) + ' e precisaria de ' + fmt(R.pmt) + ' por mês. Essa folga pode virar uma aposentadoria mais cedo, ou mais tranquila.'
+        : 'Seu patrimônio já trabalha o suficiente. O risco agora é o que pode dar errado no meio do caminho. E isso se planeja.';
+    } else {
+      v.innerHTML = R.hoje.fim
+        ? 'No ritmo de hoje, seu dinheiro acaba aos <em>' + Math.floor(R.hoje.fim) + ' anos</em>.'
+        : 'No ritmo de hoje, você <em>não chega</em> à renda que quer.';
+      s.innerHTML = 'Para viver de renda a partir dos ' + R.parar + ', você precisaria guardar <b>' + fmt(R.pmt) + ' por mês</b>' +
+        (R.aporte > 0 ? '. Faltam <b>' + fmt(R.falta) + '</b> além do que você já guarda.' : '.');
+    }
+    drawChart();
+    var f = document.getElementById('facts');
+    f.innerHTML =
+      row('Renda que você quer', fmt(R.renda) + '/mês') +
+      row('Renda passiva que já tem', fmt(R.passiva) + '/mês') +
+      row('Patrimônio necessário aos ' + R.parar, fmt(R.alvo)) +
+      row('Investido hoje', fmt(R.pv)) +
+      row('Você guarda por mês', fmt(R.aporte));
+    document.getElementById('premissas').textContent =
+      'Simulação educativa, em valores de hoje, considerando retorno de ' + (JURO_NOMINAL*100) + '% ao ano e inflação de ' + (INFLACAO*100) +
+      '% ao ano (ganho real de cerca de ' + (JURO_REAL*100).toLocaleString('pt-BR',{maximumFractionDigits:1}) + '% ao ano) e patrimônio que se mantém sem ser consumido na aposentadoria. ' +
+      'Não é recomendação de investimento nem promessa de rentabilidade. Resultados reais dependem da sua situação, dos impostos e do mercado.';
+  }
+  function row(a,b){ return '<div><dt>' + a + '</dt><dd>' + b + '</dd></div>'; }
+
+  function drawChart(){
+    var css = getComputedStyle(document.documentElement);
+    var teal = css.getPropertyValue('--teal').trim(), warn = css.getPropertyValue('--warn').trim(),
+        line = css.getPropertyValue('--line').trim(), muted = css.getPropertyValue('--muted').trim();
+    var W = 600, H = 320, L = 64, Rr = 16, T = 18, B = 34;
+    var planoIgual = R.falta === 0;
+    var all = R.hoje.pts.concat(planoIgual ? [] : R.plano.pts);
+    var ymax = Math.max.apply(null, all.map(function(p){return p.y;}).concat([R.alvo])) * 1.08 || 1;
+    var x0 = R.idade, x1 = IDADE_FINAL;
+    function X(x){ return L + (x - x0) / (x1 - x0) * (W - L - Rr); }
+    function Y(y){ return T + (1 - y / ymax) * (H - T - B); }
+    function d(pts){ return pts.map(function(p,i){ return (i?'L':'M') + X(p.x).toFixed(1) + ' ' + Y(p.y).toFixed(1); }).join(' '); }
+    var g = '';
+    for (var i = 0; i <= 4; i++){
+      var yv = ymax / 4 * i, yy = Y(yv);
+      g += '<line x1="'+L+'" x2="'+(W-Rr)+'" y1="'+yy+'" y2="'+yy+'" stroke="'+line+'" stroke-width="1"/>';
+      g += '<text x="'+(L-8)+'" y="'+(yy+4)+'" text-anchor="end" font-size="12" fill="'+muted+'" font-family="Inter,system-ui,sans-serif">'+(i?compact(yv):'0')+'</text>';
+    }
+    var ticks = [R.idade, R.parar, IDADE_FINAL];
+    ticks.forEach(function(t, k){
+      g += '<text x="'+X(t)+'" y="'+(H-10)+'" text-anchor="'+(k===2?'end':k===0?'start':'middle')+'" font-size="12" fill="'+muted+'" font-family="Inter,system-ui,sans-serif">'+t+' anos</text>';
+    });
+    g += '<line x1="'+X(R.parar)+'" x2="'+X(R.parar)+'" y1="'+T+'" y2="'+(H-B)+'" stroke="'+muted+'" stroke-dasharray="3 4" stroke-width="1"/>';
+    if (R.alvo > 0) g += '<line x1="'+L+'" x2="'+(W-Rr)+'" y1="'+Y(R.alvo)+'" y2="'+Y(R.alvo)+'" stroke="'+teal+'" stroke-dasharray="6 5" stroke-width="1.2" opacity=".6"/>';
+    if (!planoIgual) g += '<path d="'+d(R.plano.pts)+'" fill="none" stroke="'+teal+'" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"/>';
+    g += '<path d="'+d(R.hoje.pts)+'" fill="none" stroke="'+(planoIgual?teal:warn)+'" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"/>';
+    if (R.hoje.fim && !planoIgual){
+      g += '<circle cx="'+X(R.hoje.fim)+'" cy="'+Y(0)+'" r="6" fill="'+warn+'"/>';
+    }
+    document.getElementById('chart').innerHTML = '<svg viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg">'+g+'</svg>';
+    var lg = planoIgual
+      ? '<span><i style="background:'+teal+'"></i>Seu patrimônio no ritmo atual</span>'
+      : '<span><i style="background:'+warn+'"></i>Guardando ' + fmt(R.aporte) + '/mês</span><span><i style="background:'+teal+'"></i>Guardando ' + fmt(R.pmt) + '/mês</span>';
+    if (R.alvo > 0) lg += '<span><i style="background:'+teal+';opacity:.5"></i>Patrimônio necessário</span>';
+    document.getElementById('legend').innerHTML = lg;
+  }
+
+  // envio pelo WhatsApp
+  document.getElementById('send').addEventListener('click', function(ev){
+    var nome = document.getElementById('nome').value.trim(),
+        tel = document.getElementById('tel').value.trim(),
+        email = document.getElementById('email').value.trim(),
+        ok = document.getElementById('lgpd').checked, e = '';
+    if (!nome) e = 'Coloque seu nome.';
+    else if (tel.replace(/\D/g,'').length < 10) e = 'Coloque seu WhatsApp com DDD.';
+    else if (!/^\S+@\S+\.\S+$/.test(email)) e = 'Confira o e-mail.';
+    else if (!ok) e = 'Marque a autorização de contato para continuar.';
+    document.getElementById('errC').textContent = e;
+    if (e){ ev.preventDefault(); return; }
+    var linhaResultado = R.gap === 0
+      ? 'Minha renda passiva já cobre o padrão que quero.'
+      : (R.falta === 0
+          ? ('No ritmo de hoje eu chego lá aos ' + R.parar + '.')
+          : (R.hoje.fim
+              ? ('No ritmo de hoje meu dinheiro acaba aos ' + Math.floor(R.hoje.fim) + '.')
+              : 'No ritmo de hoje eu não chego na renda que quero.'));
+    var msg = 'Oi! Fiz a simulação de aposentadoria no site e quero a conversa de 30 min.\n\n' +
+      linhaResultado + '\n' +
+      (R.falta > 0 ? ('Faltam ' + fmt(R.falta) + '/mês além do que já guardo (precisaria de ' + fmt(R.pmt) + '/mês).\n') : '') +
+      '\nNome: ' + nome + '\nWhatsApp: ' + tel + '\nE-mail: ' + email + '\n' +
+      'Faixa de renda: ' + (faixa || 'não informada') + '\n\n' +
+      'Meus números: parar aos ' + R.parar + ' | renda ' + fmt(R.renda) + '/mês | passiva ' + fmt(R.passiva) + '/mês | investido ' + fmt(R.pv) + ' | guardo ' + fmt(R.aporte) + '/mês';
+    this.href = 'https://wa.me/' + WHATSAPP + '?text=' + encodeURIComponent(msg);
+    // Manda o lead por e-mail em paralelo (FormSubmit, sem backend). Fire-and-forget:
+    // se falhar, o WhatsApp já garantiu o contato.
+    try {
+      fetch('https://formsubmit.co/ajax/' + LEAD_EMAIL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({
+          _subject: 'Novo lead da calculadora: ' + nome,
+          _template: 'table',
+          _captcha: 'false',
+          Nome: nome,
+          WhatsApp: tel,
+          Email: email,
+          'Faixa de renda': faixa || 'não informada',
+          Resultado: linhaResultado,
+          'Parar aos': R.parar + ' anos',
+          'Renda desejada': fmt(R.renda) + '/mês',
+          'Renda passiva': fmt(R.passiva) + '/mês',
+          'Investido hoje': fmt(R.pv),
+          'Guarda por mês': fmt(R.aporte),
+          'Aporte necessário': R.falta > 0 ? (fmt(R.pmt) + '/mês') : 'já está no caminho'
+        })
+      }).catch(function(){});
+    } catch (err) {}
+  });
+})();
+</script>
+</body>
+</html>
