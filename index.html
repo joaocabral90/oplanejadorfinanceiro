@@ -7,6 +7,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3"></script>
 <style>
 :root{
   --teal:#0D9488; --teal-strong:#0F766E; --teal-soft:#CCFBF1;
@@ -72,8 +74,7 @@ button:focus-visible,.btn:focus-visible,input:focus-visible{outline:3px solid va
 .verdict.good em{color:var(--teal)}
 .sub{margin:16px 0 0;font-size:18px}
 .sub b{font-family:var(--display);font-weight:800;color:var(--teal-strong);font-size:20px;white-space:nowrap}
-.chart{margin:28px -6px 6px;overflow-x:auto}
-.chart svg{display:block;width:100%;height:auto;min-width:320px}
+.chart{position:relative;height:300px;margin:28px 0 10px}
 .legend{display:flex;gap:18px;flex-wrap:wrap;font-size:14px;color:var(--muted);margin-top:6px}
 .legend span{display:flex;align-items:center;gap:7px}
 .legend i{width:18px;height:3px;border-radius:2px;display:inline-block}
@@ -176,8 +177,7 @@ label.in{display:block;font-size:14px;font-weight:600;margin:14px 0 6px}
   <section class="screen" data-step="8">
     <p class="verdict" id="verdict"></p>
     <p class="sub" id="sub"></p>
-    <div class="chart" id="chart" role="img" aria-label="Gráfico da evolução do patrimônio"></div>
-    <div class="legend" id="legend"></div>
+    <div class="chart"><canvas id="chart-canvas" role="img" aria-label="Gráfico da evolução do patrimônio"></canvas></div>
     <dl class="facts" id="facts"></dl>
 
     <div class="cta-box">
@@ -282,6 +282,8 @@ label.in{display:block;font-size:14px;font-weight:600;margin:14px 0 6px}
       faixa = b.dataset.faixa;
       calc();
       show(step + 1);
+      // O gráfico é criado com a tela ainda escondida; recalibra o tamanho ao aparecer.
+      setTimeout(function(){ if (chart) chart.resize(); }, 60);
     });
   });
   document.getElementById('again').addEventListener('click', function(){ faixa = ''; show(1); });
@@ -349,41 +351,91 @@ label.in{display:block;font-size:14px;font-weight:600;margin:14px 0 6px}
   }
   function row(a,b){ return '<div><dt>' + a + '</dt><dd>' + b + '</dd></div>'; }
 
+  var chart = null;
   function drawChart(){
+    var canvas = document.getElementById('chart-canvas');
+    if (!canvas || typeof Chart === 'undefined') return;
     var css = getComputedStyle(document.documentElement);
-    var teal = css.getPropertyValue('--teal').trim(), warn = css.getPropertyValue('--warn').trim(),
-        line = css.getPropertyValue('--line').trim(), muted = css.getPropertyValue('--muted').trim();
-    var W = 600, H = 320, L = 64, Rr = 16, T = 18, B = 34;
+    var teal = css.getPropertyValue('--teal').trim(),
+        warn = css.getPropertyValue('--warn').trim(),
+        muted = css.getPropertyValue('--muted').trim();
+    var indigo = '#6366F1';
     var planoIgual = R.falta === 0;
-    var all = R.hoje.pts.concat(planoIgual ? [] : R.plano.pts);
-    var ymax = Math.max.apply(null, all.map(function(p){return p.y;}).concat([R.alvo])) * 1.08 || 1;
-    var x0 = R.idade, x1 = IDADE_FINAL;
-    function X(x){ return L + (x - x0) / (x1 - x0) * (W - L - Rr); }
-    function Y(y){ return T + (1 - y / ymax) * (H - T - B); }
-    function d(pts){ return pts.map(function(p,i){ return (i?'L':'M') + X(p.x).toFixed(1) + ' ' + Y(p.y).toFixed(1); }).join(' '); }
-    var g = '';
-    for (var i = 0; i <= 4; i++){
-      var yv = ymax / 4 * i, yy = Y(yv);
-      g += '<line x1="'+L+'" x2="'+(W-Rr)+'" y1="'+yy+'" y2="'+yy+'" stroke="'+line+'" stroke-width="1"/>';
-      g += '<text x="'+(L-8)+'" y="'+(yy+4)+'" text-anchor="end" font-size="12" fill="'+muted+'" font-family="Inter,system-ui,sans-serif">'+(i?compact(yv):'0')+'</text>';
+    var corAtual = planoIgual ? teal : warn;
+
+    // "No ritmo de hoje": trajetória real com o aporte atual (pode se esgotar).
+    var dsAtual = R.hoje.pts.map(function(p){ return { x: p.x, y: p.y }; });
+
+    // "Patrimônio necessário": rampa de pv até o alvo até a aposentadoria e estável depois
+    // (mesma lógica do gráfico do Karteo: a meta cresce até a data e se mantém).
+    var dsNec = [];
+    for (var age = R.idade; age <= IDADE_FINAL; age++){
+      var y;
+      if (age <= R.parar){
+        var pct = (R.parar > R.idade) ? (age - R.idade) / (R.parar - R.idade) : 1;
+        y = R.pv + (R.alvo - R.pv) * pct;
+      } else { y = R.alvo; }
+      dsNec.push({ x: age, y: Math.max(0, y) });
     }
-    var ticks = [R.idade, R.parar, IDADE_FINAL];
-    ticks.forEach(function(t, k){
-      g += '<text x="'+X(t)+'" y="'+(H-10)+'" text-anchor="'+(k===2?'end':k===0?'start':'middle')+'" font-size="12" fill="'+muted+'" font-family="Inter,system-ui,sans-serif">'+t+' anos</text>';
+
+    var ymax = Math.max(
+      Math.max.apply(null, dsAtual.map(function(p){ return p.y; }).concat([0])),
+      R.alvo, R.pv
+    ) * 1.12 || 1;
+
+    var datasets = [{
+      label: 'No ritmo de hoje', data: dsAtual,
+      borderColor: corAtual, backgroundColor: 'transparent',
+      fill: false, tension: 0.3, borderWidth: 3.5, spanGaps: true, order: 1
+    }];
+    if (R.alvo > 0) datasets.push({
+      label: 'Patrimônio necessário', data: dsNec,
+      borderColor: indigo, backgroundColor: 'transparent',
+      fill: false, tension: 0.3, borderWidth: 2.5, borderDash: [6, 5], order: 2
     });
-    g += '<line x1="'+X(R.parar)+'" x2="'+X(R.parar)+'" y1="'+T+'" y2="'+(H-B)+'" stroke="'+muted+'" stroke-dasharray="3 4" stroke-width="1"/>';
-    if (R.alvo > 0) g += '<line x1="'+L+'" x2="'+(W-Rr)+'" y1="'+Y(R.alvo)+'" y2="'+Y(R.alvo)+'" stroke="'+teal+'" stroke-dasharray="6 5" stroke-width="1.2" opacity=".6"/>';
-    if (!planoIgual) g += '<path d="'+d(R.plano.pts)+'" fill="none" stroke="'+teal+'" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"/>';
-    g += '<path d="'+d(R.hoje.pts)+'" fill="none" stroke="'+(planoIgual?teal:warn)+'" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"/>';
-    if (R.hoje.fim && !planoIgual){
-      g += '<circle cx="'+X(R.hoje.fim)+'" cy="'+Y(0)+'" r="6" fill="'+warn+'"/>';
-    }
-    document.getElementById('chart').innerHTML = '<svg viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg">'+g+'</svg>';
-    var lg = planoIgual
-      ? '<span><i style="background:'+teal+'"></i>Seu patrimônio no ritmo atual</span>'
-      : '<span><i style="background:'+warn+'"></i>Guardando ' + fmt(R.aporte) + '/mês</span><span><i style="background:'+teal+'"></i>Guardando ' + fmt(R.pmt) + '/mês</span>';
-    if (R.alvo > 0) lg += '<span><i style="background:'+teal+';opacity:.5"></i>Patrimônio necessário</span>';
-    document.getElementById('legend').innerHTML = lg;
+
+    var cfg = {
+      type: 'line',
+      data: { datasets: datasets },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        animation: { duration: 300 },
+        elements: { point: { radius: 0, hoverRadius: 4, hoverBorderWidth: 2 } },
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: {
+            position: 'top', align: 'end',
+            labels: { font: { family: 'Inter', size: 12, weight: '500' }, color: muted, usePointStyle: true, pointStyle: 'circle', padding: 14, boxWidth: 8, boxHeight: 8 }
+          },
+          tooltip: {
+            backgroundColor: '#12302C',
+            titleFont: { family: 'Inter', size: 13, weight: '600' },
+            bodyFont: { family: 'Inter', size: 13 },
+            padding: 12, cornerRadius: 10, boxPadding: 4,
+            callbacks: {
+              title: function(items){ return items[0].parsed.x + ' anos'; },
+              label: function(c){ return ' ' + c.dataset.label + ': ' + fmt(c.parsed.y); }
+            }
+          },
+          annotation: {
+            annotations: {
+              aposLine: {
+                type: 'line', xMin: R.parar, xMax: R.parar,
+                borderColor: 'rgba(99,102,241,0.4)', borderWidth: 1, borderDash: [5, 4],
+                label: { display: true, content: 'aos ' + R.parar, position: 'start', color: indigo, backgroundColor: 'rgba(255,255,255,0.85)', font: { family: 'Inter', size: 11, weight: '600' }, padding: 3 }
+              }
+            }
+          }
+        },
+        scales: {
+          x: { type: 'linear', min: R.idade, max: IDADE_FINAL, grid: { display: false }, border: { display: false }, ticks: { font: { family: 'Inter', size: 11 }, color: muted, stepSize: 5, maxTicksLimit: 12 } },
+          y: { beginAtZero: true, max: ymax, border: { display: false }, grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { font: { family: 'Inter', size: 11 }, color: muted, maxTicksLimit: 5, callback: function(v){ return compact(v); } } }
+        }
+      }
+    };
+
+    if (chart){ chart.data = cfg.data; chart.options = cfg.options; chart.update('none'); }
+    else { chart = new Chart(canvas, cfg); }
   }
 
   // envio pelo WhatsApp
