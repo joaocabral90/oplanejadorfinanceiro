@@ -359,7 +359,7 @@ label.in{display:block;font-size:14px;font-weight:600;margin:14px 0 6px}
     var teal = css.getPropertyValue('--teal').trim(),
         warn = css.getPropertyValue('--warn').trim(),
         muted = css.getPropertyValue('--muted').trim();
-    var indigo = '#6366F1';
+    var alvoCor = '#0F766E';
     var planoIgual = R.falta === 0;
     var corAtual = planoIgual ? teal : warn;
 
@@ -390,7 +390,7 @@ label.in{display:block;font-size:14px;font-weight:600;margin:14px 0 6px}
     }];
     if (R.alvo > 0) datasets.push({
       label: 'Patrimônio necessário', data: dsNec,
-      borderColor: indigo, backgroundColor: 'transparent',
+      borderColor: alvoCor, backgroundColor: 'transparent',
       fill: false, tension: 0.3, borderWidth: 2.5, borderDash: [6, 5], order: 2
     });
 
@@ -421,8 +421,8 @@ label.in{display:block;font-size:14px;font-weight:600;margin:14px 0 6px}
             annotations: {
               aposLine: {
                 type: 'line', xMin: R.parar, xMax: R.parar,
-                borderColor: 'rgba(99,102,241,0.4)', borderWidth: 1, borderDash: [5, 4],
-                label: { display: true, content: 'aos ' + R.parar, position: 'start', color: indigo, backgroundColor: 'rgba(255,255,255,0.85)', font: { family: 'Inter', size: 11, weight: '600' }, padding: 3 }
+                borderColor: 'rgba(15,118,110,0.4)', borderWidth: 1, borderDash: [5, 4],
+                label: { display: true, content: 'aos ' + R.parar, position: 'start', color: alvoCor, backgroundColor: 'rgba(255,255,255,0.85)', font: { family: 'Inter', size: 11, weight: '600' }, padding: 3 }
               }
             }
           }
