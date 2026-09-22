@@ -361,7 +361,7 @@ label.in{display:block;font-size:14px;font-weight:600;margin:14px 0 6px}
         muted = css.getPropertyValue('--muted').trim();
     var alvoCor = '#0F766E';
     var planoIgual = R.falta === 0;
-    var corAtual = planoIgual ? teal : warn;
+    var corAtual = '#EA580C';  // laranja fixo: contrasta sempre com o teal da linha de meta
 
     // "No ritmo de hoje": trajetória real com o aporte atual (pode se esgotar).
     var dsAtual = R.hoje.pts.map(function(p){ return { x: p.x, y: p.y }; });
